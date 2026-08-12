@@ -45,6 +45,7 @@
         caelestia-cli = inputs.caelestia-cli.packages.${pkgs.stdenv.hostPlatform.system}.default;
       };
       with-cli = caelestia-shell.override {withCli = true;};
+      caelestia-cli = inputs.caelestia-cli.packages.${pkgs.stdenv.hostPlatform.system}.default;
       debug = caelestia-shell.override {debug = true;};
       default = caelestia-shell;
     });
@@ -55,7 +56,7 @@
       in
         pkgs.mkShell.override {stdenv = shell.stdenv;} {
           inputsFrom = [shell shell.plugin shell.extras shell.m3shapesModule];
-          packages = with pkgs; [clazy material-symbols rubik nerd-fonts.caskaydia-cove];
+          packages = with pkgs; [clazy material-symbols rubik nerd-fonts.caskaydia-cove inputs.caelestia-cli.packages.${pkgs.stdenv.hostPlatform.system}.default];
           CAELESTIA_XKB_RULES_PATH = "${pkgs.xkeyboard-config}/share/xkeyboard-config-2/rules/base.lst";
         };
     });
