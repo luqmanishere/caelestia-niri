@@ -13,16 +13,7 @@ Singleton {
     property alias enabled: props.enabled
 
     function setDynamicConfs(): void {
-        Hypr.extras.applyOptions({
-            "animations:enabled": 0,
-            "decoration:shadow:enabled": 0,
-            "decoration:blur:enabled": 0,
-            "general:gaps_in": 0,
-            "general:gaps_out": 0,
-            "general:border_size": 1,
-            "decoration:rounding": 0,
-            "general:allow_tearing": 1
-        });
+        // can't set stuff on niri
     }
 
     onEnabledChanged: {
@@ -31,7 +22,7 @@ Singleton {
             if (GlobalConfig.utilities.toasts.gameModeChanged)
                 Toaster.toast(qsTr("Game mode enabled"), qsTr("Disabled Hyprland animations, blur, gaps and shadows"), "gamepad");
         } else {
-            Hypr.extras.message("reload");
+            // can't set stuff on niri
             if (GlobalConfig.utilities.toasts.gameModeChanged)
                 Toaster.toast(qsTr("Game mode disabled"), qsTr("Hyprland settings restored"), "gamepad");
         }
@@ -40,18 +31,10 @@ Singleton {
     PersistentProperties {
         id: props
 
-        property bool enabled: Hypr.options["animations:enabled"] === 0 // qmllint disable missing-property
+        // property bool enabled: Hypr.options["animations:enabled"] === 0 // qmllint disable missing-property
+        property bool enabled: false
 
         reloadableId: "gameMode"
-    }
-
-    Connections {
-        function onConfigReloaded(): void {
-            if (props.enabled)
-                root.setDynamicConfs();
-        }
-
-        target: Hypr
     }
 
     IpcHandler {
