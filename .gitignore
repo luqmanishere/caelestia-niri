@@ -2,5 +2,8 @@
 /result
 /.qmlls.ini
 build/
+build-module/
+.plugin-prefix/
 .cache/
 logs
+/PORT-NOTES.md

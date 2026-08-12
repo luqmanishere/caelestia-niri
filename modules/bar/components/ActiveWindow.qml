@@ -14,7 +14,7 @@ Item {
     property color colour: Colours.palette.m3primary
 
     readonly property string windowTitle: {
-        const title = Hypr.activeToplevel?.title;
+        const title = Niri.activeToplevel?.title;
         if (!title)
             return qsTr("Desktop");
         if (Config.bar.activeWindow.compact) {
@@ -70,7 +70,7 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
 
         animate: true
-        text: Icons.getAppCategoryIcon(Hypr.activeToplevel?.lastIpcObject.class, "desktop_windows")
+        text: Icons.getAppCategoryIcon(Niri.activeToplevel?.lastIpcObject.class, "desktop_windows")
         color: root.colour
     }
 

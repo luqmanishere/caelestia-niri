@@ -15,7 +15,16 @@ Item {
     required property ShellScreen screen
     required property Item wallpaper
 
-    readonly property bool shouldBeActive: Config.background.visualiser.enabled && (!Config.background.visualiser.autoHide || (Hypr.monitorFor(screen)?.activeWorkspace?.toplevels?.values.every(t => t.lastIpcObject?.floating) ?? true))
+    readonly property bool shouldBeActive: {
+        if (!Config.background.visualiser.enabled)
+            return false;
+        if (!Config.background.visualiser.autoHide)
+            return true;
+        // All windows on the active workspace of this screen must be floating
+        const wsId = Niri.monitorFor(screen)?.activeWorkspace?.id;
+        const wins = wsId ? Niri.toplevels.filter(w => w.workspace?.id === wsId) : [];
+        return wins.every(w => w.is_floating);
+    }
     property real offset: shouldBeActive ? 0 : screen.height * 0.2
 
     opacity: shouldBeActive ? 1 : 0

@@ -37,7 +37,7 @@ ColumnLayout {
 
         animate: true
         text: {
-            const ws = Hypr.workspaces.values.find(w => w.id === root.ws);
+            const ws = Niri.workspaces.find(w => w.id === root.ws);
             const wsName = !ws || ws.name == root.ws ? root.ws : ws.name[0];
             let displayName = wsName.toString();
             if (Config.bar.workspaces.capitalisation.toLowerCase() === "upper") {
@@ -94,7 +94,7 @@ ColumnLayout {
                 model: ScriptModel {
                     values: {
                         const ws = root.ws;
-                        const windows = Hypr.toplevels.values.filter(c => c.workspace?.id === ws);
+                        const windows = Niri.toplevels.filter(c => c.workspace?.id === ws);
                         const maxIcons = root.Config.bar.workspaces.maxWindowIcons;
                         return maxIcons > 0 ? windows.slice(0, maxIcons) : windows;
                     }
