@@ -614,6 +614,7 @@ Singleton {
         const activeWs = root.allWorkspaces.find(w => w.output === name && w.is_active);
         return {
             name: name,
+            focused: root.focusedMonitorName === name,
             activeWorkspace: activeWs ? {
                 id: activeWs.id
             } : null
