@@ -21,32 +21,32 @@ PageBase {
         spacing: Tokens.spacing.extraSmall / 2
 
         Timer {
-            running: root.visible && Nmcli.wifiEnabled
+            running: root.visible && Network.wifiEnabled
             repeat: true
             triggeredOnStart: true
             interval: GlobalConfig.nexus.networkRescanInterval
-            onTriggered: Nmcli.rescanWifi()
+            onTriggered: Network.rescanWifi()
         }
 
         Timer {
             id: wifiScanDelay
 
             interval: 100
-            onTriggered: Nmcli.rescanWifi()
+            onTriggered: Network.rescanWifi()
         }
 
         Connections {
             function onWifiEnabledChanged(): void {
-                if (Nmcli.wifiEnabled)
+                if (Network.wifiEnabled)
                     wifiScanDelay.start();
             }
 
-            target: Nmcli
+            target: Network
         }
 
         Loader {
             Layout.fillWidth: true
-            active: Nmcli.hasAvailableEthernet
+            active: Network.supportsEthernet && Network.hasAvailableEthernet
             visible: active
             asynchronous: true
 
@@ -57,17 +57,17 @@ PageBase {
         }
 
         ToggleRow {
-            Layout.topMargin: Nmcli.hasAvailableEthernet ? Tokens.spacing.large : 0
+            Layout.topMargin: Network.supportsEthernet && Network.hasAvailableEthernet ? Tokens.spacing.large : 0
             first: true
             text: qsTr("Wi-Fi")
             font: Tokens.font.body.medium
             horizontalPadding: Tokens.padding.largeIncreased
-            checked: Nmcli.wifiEnabled
-            onToggled: Nmcli.enableWifi(checked)
+            checked: Network.wifiEnabled
+            onToggled: Network.enableWifi(checked)
         }
 
         NetworkList {
-            Layout.bottomMargin: Nmcli.wifiEnabled && Nmcli.networks.length > GlobalConfig.nexus.maxNetworksShown ? 0 : -parent.spacing
+            Layout.bottomMargin: Network.wifiEnabled && Network.networks.length > GlobalConfig.nexus.maxNetworksShown ? 0 : -parent.spacing
             nState: root.nState
             limit: GlobalConfig.nexus.maxNetworksShown
 
@@ -80,11 +80,11 @@ PageBase {
 
         // All networks button, only when > max networks
         RowButton {
-            Layout.preferredHeight: Nmcli.wifiEnabled && Nmcli.networks.length > GlobalConfig.nexus.maxNetworksShown ? implicitHeight : 0
+            Layout.preferredHeight: Network.wifiEnabled && Network.networks.length > GlobalConfig.nexus.maxNetworksShown ? implicitHeight : 0
             clip: true
 
             icon: "expand_content"
-            text: qsTr("Show all networks (%1)").arg(Nmcli.networks.length)
+            text: qsTr("Show all networks (%1)").arg(Network.networks.length)
             trailingIcon: "chevron_right"
             onClicked: root.nState.openSubPage(5) // All networks sub-page
 
@@ -95,11 +95,12 @@ PageBase {
             }
         }
 
-        // Saved networks button
+        // Saved networks button (nmcli-only: iwd has no saved profiles UI)
         RowButton {
             icon: "bookmark"
             text: qsTr("Saved networks")
             trailingIcon: "chevron_right"
+            visible: Network.supportsSavedProfiles
             onClicked: root.nState.openSubPage(6) // Saved networks sub-page
         }
 
@@ -107,7 +108,8 @@ PageBase {
             last: true
             icon: "add"
             text: qsTr("Add network")
-            disabled: !Nmcli.wifiEnabled
+            disabled: !Network.wifiEnabled
+            visible: Network.supportsHiddenNetworks
             onClicked: root.nState.openSubPage(2) // Add network sub-page
         }
 

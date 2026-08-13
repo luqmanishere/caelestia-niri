@@ -17,24 +17,24 @@ ItemList {
     property int limit: 0 // 0 = show all
     property bool enableFilter
 
-    signal networkSelected(ap: Nmcli.AccessPoint)
+    signal networkSelected(ap: Network.AccessPoint)
 
-    function networkFilter(ap: Nmcli.AccessPoint): bool {
+    function networkFilter(ap: Network.AccessPoint): bool {
         return true;
     }
 
-    showList: Nmcli.wifiEnabled
-    placeholderIcon: Nmcli.wifiEnabled ? "wifi_find" : "signal_wifi_off"
-    placeholderText: Nmcli.wifiEnabled ? qsTr("No networks found") : qsTr("Wi-Fi disabled")
-    extraHeight: Nmcli.scanning ? Tokens.rounding.extraSmall : 0 // Inline so it isn't affected by anim
+    showList: Network.wifiEnabled
+    placeholderIcon: Network.wifiEnabled ? "wifi_find" : "signal_wifi_off"
+    placeholderText: Network.wifiEnabled ? qsTr("No networks found") : qsTr("Wi-Fi disabled")
+    extraHeight: Network.scanning ? Tokens.rounding.extraSmall : 0 // Inline so it isn't affected by anim
     list.anchors.top: scanningIndicator.bottom
 
     model: ScriptModel {
         values: {
-            const connecting = Nmcli.connectingSsid();
+            const connecting = Network.connectingSsid();
             // Lower rank sorts higher in the list
-            const rank = n => n.active ? 0 : n.ssid === connecting ? 1 : Nmcli.hasSavedProfile(n.ssid) ? 2 : 3;
-            const sorted = [...Nmcli.networks].sort((a, b) => rank(a) - rank(b) || b.strength - a.strength);
+            const rank = n => n.active ? 0 : n.ssid === connecting ? 1 : Network.hasSavedProfile(n.ssid) ? 2 : 3;
+            const sorted = [...Network.networks].sort((a, b) => rank(a) - rank(b) || b.strength - a.strength);
             if (root.limit > 0 && sorted.length > root.limit)
                 sorted.length = root.limit;
             return root.enableFilter ? sorted.filter(root.networkFilter) : sorted;
@@ -49,7 +49,7 @@ ItemList {
         property bool currentSelected
         property real textOpacity: disabled ? 0.5 : 1
 
-        disabled: currentSelected || Nmcli.connectingSsid() === modelData.ssid
+        disabled: currentSelected || Network.connectingSsid() === modelData.ssid
 
         anchors.left: root.list.contentItem.left
         anchors.right: root.list.contentItem.right
@@ -88,7 +88,7 @@ ItemList {
         }
 
         Connections {
-            function onNetworkSelected(ap: Nmcli.AccessPoint): void {
+            function onNetworkSelected(ap: Network.AccessPoint): void {
                 if (ap !== network.modelData)
                     network.currentSelected = false;
             }
@@ -126,7 +126,7 @@ ItemList {
 
                 StyledText {
                     Layout.fillWidth: true
-                    text: qsTr("Security: %1%2").arg(network.modelData.security).arg(network.modelData.active ? qsTr(" • Connected") : Nmcli.hasSavedProfile(network.modelData.ssid) ? qsTr(" • Saved") : "")
+                    text: qsTr("Security: %1%2").arg(network.modelData.security).arg(network.modelData.active ? qsTr(" • Connected") : Network.hasSavedProfile(network.modelData.ssid) ? qsTr(" • Saved") : "")
                     color: Colours.palette.m3outline
                     font: Tokens.font.label.small
                     elide: Text.ElideRight
@@ -134,7 +134,7 @@ ItemList {
             }
 
             AnimLoader {
-                sourceComp: Nmcli.connectingSsid() === network.modelData.ssid ? loadingComp : iconComp
+                sourceComp: Network.connectingSsid() === network.modelData.ssid ? loadingComp : iconComp
 
                 Component {
                     id: iconComp
@@ -164,7 +164,7 @@ ItemList {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.margins: 1
-        implicitHeight: Nmcli.scanning ? Tokens.rounding.extraSmall : 0
+        implicitHeight: Network.scanning ? Tokens.rounding.extraSmall : 0
         indeterminate: true
 
         Behavior on implicitHeight {

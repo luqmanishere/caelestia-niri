@@ -25,11 +25,11 @@ ColumnLayout {
         triggeredOnStart: true
         interval: 5000
         onTriggered: {
-            Nmcli.getEthernetInterfaces(() => {});
-            if (Nmcli.activeEthernet) {
-                Nmcli.getEthernetDeviceDetails(Nmcli.activeEthernet.iface, () => {});
-                Nmcli.getEthernetDataUsage(Nmcli.activeEthernet.iface, () => {});
-                Nmcli.getEthernetSpeed(Nmcli.activeEthernet.iface);
+            Network.getEthernetInterfaces(() => {});
+            if (Network.activeEthernet) {
+                Network.getEthernetDeviceDetails(Network.activeEthernet.iface, () => {});
+                Network.getEthernetDataUsage(Network.activeEthernet.iface, () => {});
+                Network.getEthernetSpeed(Network.activeEthernet.iface);
             }
         }
     }
@@ -60,15 +60,15 @@ ColumnLayout {
 
                 StyledText {
                     Layout.alignment: Qt.AlignRight
-                    text: Nmcli.activeEthernet ? qsTr("Connected") : qsTr("Not connected")
-                    color: Nmcli.activeEthernet ? Colours.palette.m3primary : Colours.palette.m3outline
+                    text: Network.activeEthernet ? qsTr("Connected") : qsTr("Not connected")
+                    color: Network.activeEthernet ? Colours.palette.m3primary : Colours.palette.m3outline
                     font: Tokens.font.label.small
                 }
 
                 StyledText {
                     Layout.alignment: Qt.AlignRight
-                    visible: Nmcli.activeEthernet && Nmcli.ethernetDataUsage.length > 0
-                    text: qsTr("Data usage: %1").arg(Nmcli.ethernetDataUsage)
+                    visible: Network.activeEthernet && Network.ethernetDataUsage.length > 0
+                    text: qsTr("Data usage: %1").arg(Network.ethernetDataUsage)
                     color: Colours.palette.m3outline
                     font: Tokens.font.label.small
                 }
@@ -80,19 +80,19 @@ ColumnLayout {
         id: ethRepeater
 
         model: ScriptModel {
-            values: Nmcli.ethernetDevices.filter(d => d.state !== "unavailable")
+            values: Network.ethernetDevices.filter(d => d.state !== "unavailable")
         }
 
         delegate: ConnectedRect {
             id: ethRow
 
-            required property Nmcli.EthernetDevice modelData
+            required property Network.EthernetDevice modelData
             required property int index
 
             readonly property bool isConnected: modelData.connected
             // IP/MAC/DNS come from the parsed device details, not the basic
             // device list (which leaves those fields blank).
-            readonly property var details: ethRow.isConnected ? Nmcli.ethernetDeviceDetails : null
+            readonly property var details: ethRow.isConnected ? Network.ethernetDeviceDetails : null
 
             Layout.fillWidth: true
             last: index === ethRepeater.count - 1
@@ -212,9 +212,9 @@ ColumnLayout {
                     icon: ethRow.isConnected ? "link_off" : "link"
                     onClicked: {
                         if (ethRow.isConnected)
-                            Nmcli.disconnectEthernet(ethRow.modelData.connection);
+                            Network.disconnectEthernet(ethRow.modelData.connection);
                         else
-                            Nmcli.connectEthernet(ethRow.modelData.connection, ethRow.modelData.iface);
+                            Network.connectEthernet(ethRow.modelData.connection, ethRow.modelData.iface);
                     }
                 }
 

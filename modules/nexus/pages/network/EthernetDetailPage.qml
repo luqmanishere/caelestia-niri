@@ -15,8 +15,8 @@ PageBase {
     id: root
 
     readonly property string ifaceName: nState.selectedEthernetInterface
-    readonly property Nmcli.EthernetDevice device: Nmcli.ethernetDevices.find(d => d.iface === root.ifaceName) ?? null
-    readonly property var details: Nmcli.ethernetDeviceDetails
+    readonly property Network.EthernetDevice device: Network.ethernetDevices.find(d => d.iface === root.ifaceName) ?? null
+    readonly property var details: Network.ethernetDeviceDetails
     readonly property string connectionName: root.device?.connection ?? ""
 
     // Locally-edited IPv4 form state.
@@ -35,7 +35,7 @@ PageBase {
     function loadIpConfig(): void {
         if (!root.connectionName)
             return;
-        Nmcli.getIpv4Config(root.connectionName, cfg => {
+        Network.getIpv4Config(root.connectionName, cfg => {
             if (!cfg)
                 return;
             root.ipMethod = cfg.method;
@@ -72,7 +72,7 @@ PageBase {
         }
 
         root.savingIp = true;
-        Nmcli.setIpv4Config(root.connectionName, {
+        Network.setIpv4Config(root.connectionName, {
             method: root.ipMethod,
             address: addressField.text.trim(),
             gateway: gatewayField.text.trim(),
@@ -99,8 +99,8 @@ PageBase {
     isSubPage: true
 
     Component.onCompleted: {
-        Nmcli.getEthernetDeviceDetails(root.ifaceName, () => {});
-        Nmcli.getEthernetSpeed(root.ifaceName);
+        Network.getEthernetDeviceDetails(root.ifaceName, () => {});
+        Network.getEthernetSpeed(root.ifaceName);
         loadIpConfig();
     }
 
@@ -131,9 +131,9 @@ PageBase {
 
                 onClicked: {
                     if (root.device?.connected)
-                        Nmcli.disconnectEthernet(root.connectionName);
+                        Network.disconnectEthernet(root.connectionName);
                     else
-                        Nmcli.connectEthernet(root.connectionName, root.ifaceName);
+                        Network.connectEthernet(root.connectionName, root.ifaceName);
                 }
 
                 ColumnLayout {
@@ -180,8 +180,8 @@ PageBase {
         InfoRow {
             icon: "speed"
             label: qsTr("Speed")
-            visible: Nmcli.ethernetSpeed.length > 0
-            value: Nmcli.ethernetSpeed
+            visible: Network.ethernetSpeed.length > 0
+            value: Network.ethernetSpeed
         }
 
         InfoRow {

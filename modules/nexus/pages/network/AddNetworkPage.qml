@@ -35,7 +35,7 @@ PageBase {
         root.failed = false;
         root.connecting = true;
 
-        Nmcli.addHiddenNetwork(ssid, root.secured ? passwordField.text : "", root.secured ? "wpa" : "none", hiddenToggle.checked, result => {
+        Network.addHiddenNetwork(ssid, root.secured ? passwordField.text : "", root.secured ? "wpa" : "none", hiddenToggle.checked, result => {
             root.connecting = false;
             if (result && result.success) {
                 root.success = true;
@@ -45,7 +45,7 @@ PageBase {
                 if (root.secured)
                     passwordField.isError = true;
                 // Clean up the half-created profile so a retry starts fresh.
-                Nmcli.forgetNetwork(ssid);
+                Network.forgetNetwork(ssid);
             }
         });
     }
@@ -66,7 +66,7 @@ PageBase {
 
                 const ssid = ssidField.text.trim();
                 if (ssid)
-                    Nmcli.forgetNetwork(ssid);
+                    Network.forgetNetwork(ssid);
             }
 
             target: root.nState

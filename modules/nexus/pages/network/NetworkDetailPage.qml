@@ -15,9 +15,9 @@ PageBase {
     id: root
 
     readonly property string ssid: nState.selectedNetworkSsid
-    readonly property var ap: Nmcli.findNetwork(root.ssid)
-    readonly property var details: Nmcli.wirelessDeviceDetails
-    readonly property bool isActive: !!Nmcli.active && Nmcli.active.ssid === root.ssid
+    readonly property var ap: Network.findNetwork(root.ssid)
+    readonly property var details: Network.wirelessDeviceDetails
+    readonly property bool isActive: !!Network.active && Network.active.ssid === root.ssid
 
     // Locally-edited IPv4 form state.
     property string ipMethod: "auto" // "auto" | "auto-dns" | "manual"
@@ -38,7 +38,7 @@ PageBase {
     function loadIpConfig(): void {
         if (!root.ssid)
             return;
-        Nmcli.getIpv4Config(root.ssid, cfg => {
+        Network.getIpv4Config(root.ssid, cfg => {
             if (!cfg)
                 return;
             root.ipMethod = cfg.method; // "auto" | "auto-dns" | "manual"
@@ -59,7 +59,7 @@ PageBase {
         if (!root.ssid)
             return;
         root.savingIp = true;
-        Nmcli.setIpv4Config(root.ssid, {
+        Network.setIpv4Config(root.ssid, {
             method: root.ipMethod,
             address: addressField.text.trim(),
             gateway: gatewayField.text.trim(),
@@ -91,7 +91,7 @@ PageBase {
     isSubPage: true
 
     Component.onCompleted: {
-        Nmcli.getWirelessDeviceDetails("", () => {});
+        Network.getWirelessDeviceDetails("", () => {});
         loadIpConfig();
     }
 
@@ -121,7 +121,7 @@ PageBase {
                 implicitHeight: forgetLayout.implicitHeight + Tokens.padding.medium * 2
 
                 onClicked: {
-                    Nmcli.forgetNetwork(root.ssid);
+                    Network.forgetNetwork(root.ssid);
                     root.nState.closeSubPage();
                 }
 
@@ -160,7 +160,7 @@ PageBase {
                 implicitHeight: disconnectLayout.implicitHeight + Tokens.padding.medium * 2
 
                 onClicked: {
-                    Nmcli.disconnectFromNetwork();
+                    Network.disconnectFromNetwork();
                     root.nState.closeSubPage();
                 }
 
@@ -253,7 +253,7 @@ PageBase {
             enabled: root.ipLoaded
             onToggled: {
                 root.autoconnect = checked;
-                Nmcli.setAutoconnect(root.ssid, checked, () => {});
+                Network.setAutoconnect(root.ssid, checked, () => {});
             }
         }
 

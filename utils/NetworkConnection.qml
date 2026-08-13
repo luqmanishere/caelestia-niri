@@ -42,8 +42,8 @@ QtObject {
             return;
         }
 
-        if (Nmcli.active && Nmcli.active.ssid !== network.ssid) {
-            Nmcli.disconnectFromNetwork();
+        if (Network.active && Network.active.ssid !== network.ssid) {
+            Network.disconnectFromNetwork();
             Qt.callLater(() => {
                 root.connectToNetwork(network, session, onPasswordNeeded);
             });
@@ -67,20 +67,20 @@ QtObject {
         }
 
         if (network.isSecure) {
-            const hasSavedProfile = Nmcli.hasSavedProfile(network.ssid);
+            const hasSavedProfile = Network.hasSavedProfile(network.ssid);
 
             if (hasSavedProfile) {
-                Nmcli.connectToNetwork(network.ssid, "", network.bssid, null);
+                Network.connectToNetwork(network.ssid, "", network.bssid, null);
             } else {
                 // Use password check with callback
-                Nmcli.connectToNetworkWithPasswordCheck(network.ssid, network.isSecure, result => {
+                Network.connectToNetworkWithPasswordCheck(network.ssid, network.isSecure, result => {
                     if (result.needsPassword) {
                         // Clear pending connection if exists
-                        if (Nmcli.pendingConnection) {
-                            Nmcli.connectionCheckTimer.stop();
-                            Nmcli.immediateCheckTimer.stop();
-                            Nmcli.immediateCheckTimer.checkCount = 0;
-                            Nmcli.pendingConnection = null;
+                        if (Network.pendingConnection) {
+                            Network.connectionCheckTimer.stop();
+                            Network.immediateCheckTimer.stop();
+                            Network.immediateCheckTimer.checkCount = 0;
+                            Network.pendingConnection = null;
                         }
 
                         // Handle password dialog - use session if available, otherwise use callback
@@ -94,7 +94,7 @@ QtObject {
                 }, network.bssid);
             }
         } else {
-            Nmcli.connectToNetwork(network.ssid, "", network.bssid, null);
+            Network.connectToNetwork(network.ssid, "", network.bssid, null);
         }
     }
 
@@ -111,6 +111,6 @@ QtObject {
             return;
         }
 
-        Nmcli.connectToNetwork(network.ssid, password || "", network.bssid || "", onResult || null);
+        Network.connectToNetwork(network.ssid, password || "", network.bssid || "", onResult || null);
     }
 }

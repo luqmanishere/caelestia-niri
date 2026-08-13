@@ -24,6 +24,9 @@ class ServiceConfig : public ConfigObject {
     CONFIG_GLOBAL_PROPERTY(
         bool, useTwelveHourClock, QLocale().timeFormat(QLocale::ShortFormat).toLower().contains(u"a"_s))
     CONFIG_GLOBAL_PROPERTY(QString, gpuType)
+    // Network backend: "nmcli" (NetworkManager) or "iwd". Selects the provider
+    // the Network facade drives.
+    CONFIG_GLOBAL_PROPERTY(QString, networkBackend, u"nmcli"_s)
     CONFIG_GLOBAL_PROPERTY(int, visualiserBars, 60)
     CONFIG_GLOBAL_PROPERTY(qreal, audioIncrement, 0.1)
     CONFIG_GLOBAL_PROPERTY(qreal, brightnessIncrement, 0.1)
