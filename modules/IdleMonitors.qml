@@ -54,6 +54,43 @@ Scope {
         target: SessionManager
     }
 
+    // While the lock screen is shown, power the monitors off after the user has
+    // been idle for a short while. Uses the idle-notify protocol (like the
+    // config timeouts): any input activity resets the idle timer, so waking to
+    // type a password keeps the screen on until you stop typing for a moment.
+    //
+    // The monitor stays always-enabled (so it reliably reports idle); the
+    // action is gated on the lock state. respectInhibitors is false so an idle
+    // inhibitor (e.g. a fullscreen app) can't keep the screen lit while locked.
+    IdleMonitor {
+        id: lockScreenIdleMonitor
+
+        timeout: 10
+        respectInhibitors: false
+
+        onIsIdleChanged: {
+            if (!root.lock.lock.locked)
+                return;
+            Niri.dispatch(isIdle ? "power-off-monitors" : "power-on-monitors");
+        }
+    }
+
+    Connections {
+        function onLockedChanged(): void {
+            if (root.lock.lock.locked) {
+                // If we're already idle when the lock engages (e.g. the idle
+                // lock action), power off immediately - there's no isIdle
+                // transition to catch it.
+                if (lockScreenIdleMonitor.isIdle)
+                    Niri.dispatch("power-off-monitors");
+            } else {
+                Niri.dispatch("power-on-monitors");
+            }
+        }
+
+        target: root.lock.lock
+    }
+
     Variants {
         model: GlobalConfig.general.idle.timeouts
 
