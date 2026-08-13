@@ -31,6 +31,8 @@ Scope {
     signal flashMsg
 
     function handleKey(event: KeyEvent): void {
+        fprint.onActivity();
+
         if (passwd.active)
             return;
 
@@ -130,6 +132,7 @@ Scope {
         retryOnFail: true
         enabled: GlobalConfig.lock.enableFprint
         maxTries: GlobalConfig.lock.maxFprintTries
+        inactiveTimeout: GlobalConfig.lock.fprintInactiveTimeout
         onAvailProcExited: root.restartFprint()
     }
 
@@ -140,6 +143,7 @@ Scope {
         availCommand: ["sh", "-c", "command -v howdy"]
         enabled: GlobalConfig.lock.enableHowdy
         maxTries: GlobalConfig.lock.maxHowdyTries
+        inactiveTimeout: 0
     }
 
     Connections {
@@ -191,6 +195,7 @@ Scope {
 
         required property bool enabled
         required property int maxTries
+        required property int inactiveTimeout
         property alias config: pam.config
         property alias availCommand: availProc.command
         property bool retryOnFail
@@ -199,6 +204,7 @@ Scope {
         property int tries
         property int errorTries
         property int state
+        property bool pausedForInactivity
         readonly property bool canAttempt: available && enabled && root.lock.secure && tries < maxTries
 
         readonly property alias active: pam.active
@@ -211,17 +217,38 @@ Scope {
         }
 
         function start(): void {
+            pausedForInactivity = false;
             pam.start();
+            startInactivityTimer();
         }
 
         function abort(): void {
             pam.abort();
         }
 
+        // Acknowledge user activity on the lock: resume a sensor paused for
+        // inactivity, or refresh the inactivity deadline.
+        function onActivity(): void {
+            if (pausedForInactivity) {
+                if (canAttempt)
+                    start();
+            } else {
+                startInactivityTimer();
+            }
+        }
+
         function reset(): void {
             tries = 0;
             errorTries = 0;
             state = Pam.None;
+            pausedForInactivity = false;
+            inactivityTimer.stop();
+        }
+
+        function startInactivityTimer(): void {
+            if (inactiveTimeout <= 0)
+                return;
+            inactivityTimer.restart();
         }
 
         PamContext {
@@ -277,6 +304,22 @@ Scope {
                 if (ctx.state !== Pam.MaxTries)
                     ctx.state = Pam.None;
                 ctx.errorTries = 0;
+            }
+        }
+
+        // After inactiveTimeout seconds of no user activity while verifying,
+        // release the sensor (abort). This prevents match-on-sensor devices
+        // from disconnecting after long-held verification sessions. Any key
+        // input on the lock resumes it (see onActivity).
+        Timer {
+            id: inactivityTimer
+
+            interval: ctx.inactiveTimeout * 1000
+            onTriggered: {
+                if (ctx.active && !ctx.pausedForInactivity) {
+                    ctx.pausedForInactivity = true;
+                    ctx.abort();
+                }
             }
         }
 
