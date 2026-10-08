@@ -2,8 +2,9 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Effects
-import QtQuick.Layouts
 import Quickshell
+import Caelestia
+import Caelestia.Components
 import Caelestia.Config
 import qs.components
 import qs.services
@@ -14,24 +15,44 @@ StyledClippingRect {
     required property ShellScreen screen
     required property bool fullscreen
 
-    // niri has no specal workspaces
-    // readonly property bool onSpecial: (GlobalConfig.bar.workspaces.perMonitorWorkspaces ? Hypr.monitorFor(screen) : Hypr.focusedMonitor)?.lastIpcObject.specialWorkspace?.name !== ""
+    // Niri has no special workspaces.
     readonly property bool onSpecial: false
-    // readonly property int activeWsId: GlobalConfig.bar.workspaces.perMonitorWorkspaces ? (Hypr.monitorFor(screen).activeWorkspace?.id ?? 1) : Hypr.activeWsId
-    readonly property int activeWsId: GlobalConfig.bar.workspaces.perMonitorWorkspaces ? (Niri.monitorFor(screen).activeWorkspace?.id ?? 1): Niri.activeWsId
-
-    readonly property var occupied: {
-        const occ = {};
-        for (const ws of Niri.workspaces)
-            occ[ws.id] = ws.lastIpcObject.windows > 0;
-        return occ;
+    readonly property var monitor: Niri.monitorFor(screen)
+    readonly property var activeWorkspace: {
+        if (!Config.bar.workspaces.perMonitor)
+            return Niri.focusedWorkspace;
+        return Niri.workspaces.find(w => w.output === monitor?.name && w.is_active)
+            ?? Niri.workspaces.find(w => w.output === monitor?.name)
+            ?? Niri.focusedWorkspace;
     }
-    readonly property int groupOffset: Math.floor((activeWsId - 1) / Config.bar.workspaces.shown) * Config.bar.workspaces.shown
+    readonly property var activeWsId: activeWorkspace?.id ?? null
+    readonly property int shown: Math.max(1, Config.bar.workspaces.shown)
+
+    readonly property var wsIds: {
+        const allMonitors = !Config.bar.workspaces.perMonitor;
+        const candidates = Niri.workspaces.filter(w => allMonitors || w.output === root.monitor?.name);
+        const shownWorkspaces = Config.bar.workspaces.showUnoccupied
+            ? candidates
+            : candidates.filter(w => Niri.getWindowsByWorkspaceId(w.id).length > 0 || w.id === activeWsId);
+        const currentIdx = shownWorkspaces.findIndex(w => w.id === activeWsId);
+        if (currentIdx < 0)
+            return [];
+
+        const end = CUtils.clamp(currentIdx + 1, Math.min(shown, shownWorkspaces.length), shownWorkspaces.length);
+        const start = Math.max(0, end - shown);
+
+        return shownWorkspaces.slice(start, end).map(w => w.id);
+    }
+
+    readonly property var workspaces: {
+        workspaces.itemsDirty;
+        return wsIds.map((_, index) => workspaces.itemAtIndex(index));
+    }
 
     property real blur: onSpecial ? 1 : 0
 
     implicitWidth: Tokens.sizes.bar.innerWidth
-    implicitHeight: layout.implicitHeight + Tokens.padding.small
+    implicitHeight: workspaces.layoutHeight + workspaces.anchors.margins * 2
 
     color: Colours.tPalette.m3surfaceContainer
     radius: Tokens.rounding.full
@@ -51,61 +72,98 @@ StyledClippingRect {
 
         Loader {
             asynchronous: true
-            active: Config.bar.workspaces.occupiedBg
+            opacity: Config.bar.workspaces.occupiedBg ? 1 : 0
+            active: opacity > 0
 
             anchors.fill: parent
             anchors.margins: Tokens.padding.extraSmall
 
             sourceComponent: OccupiedBg {
-                workspaces: workspaces
-                occupied: root.occupied
-                groupOffset: root.groupOffset
+                workspaces: root.workspaces
+                wsSpacing: workspaces.spacing
+            }
+
+            Behavior on opacity {
+                Anim {
+                    type: Anim.DefaultEffects
+                }
             }
         }
 
-        ColumnLayout {
-            id: layout
+        LazyListView {
+            id: workspaces
 
-            anchors.centerIn: parent
-            spacing: Math.floor(Tokens.spacing.extraSmall)
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.margins: Tokens.padding.extraSmall
+            implicitHeight: contentHeight
 
-            Repeater {
-                id: workspaces
+            spacing: Tokens.spacing.extraSmall
+            removeDuration: Tokens.anim.durations.expressiveDefaultEffects
 
-                model: Config.bar.workspaces.shown
+            model: ScriptModel {
+                values: root.wsIds
+            }
 
-                Workspace {
-                    activeWsId: root.activeWsId
-                    occupied: root.occupied
-                    groupOffset: root.groupOffset
+            delegate: Workspace {
+                activeWsId: root.activeWsId
+                ws: modelData
+                monitor: root.monitor
+
+                displayType: Config.bar.workspaces.displayType
+                showWindows: Config.bar.workspaces.showWindows
+                iconRules: GlobalConfig.bar.workspaces.workspaceIcons
+                activeLabel: Config.bar.workspaces.activeLabel
+                occupiedLabel: Config.bar.workspaces.occupiedLabel
+                label: Config.bar.workspaces.label
+            }
+        }
+
+        Loader {
+            asynchronous: true
+            opacity: Config.bar.workspaces.showUnoccupied ? 0 : 1
+            active: opacity > 0
+
+            anchors.fill: parent
+            anchors.margins: Tokens.padding.extraSmall
+
+            sourceComponent: GapMarkers {
+                workspaces: root.workspaces
+                wsSpacing: workspaces.spacing
+            }
+
+            Behavior on opacity {
+                Anim {
+                    type: Anim.DefaultEffects
                 }
             }
         }
 
         Loader {
             asynchronous: true
-            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.left: workspaces.left
+            anchors.right: workspaces.right
             active: Config.bar.workspaces.activeIndicator
 
             sourceComponent: ActiveIndicator {
-                activeWsId: root.activeWsId
-                workspaces: workspaces
-                mask: layout
-                fullscreen: root.fullscreen
+                activeWs: {
+                    workspaces.itemsDirty;
+                    const index = root.wsIds.indexOf(root.activeWsId);
+                    return index >= 0 ? workspaces.itemAtIndex(index) as Workspace : null;
+                }
+                mask: workspaces
             }
         }
 
         MouseArea {
-            anchors.fill: layout
+            anchors.fill: workspaces
             onClicked: event => {
-                const ws = (layout.childAt(event.x, event.y) as Workspace)?.ws;
-                if (!ws)
+                const ws = (workspaces.itemAt(event.x, event.y) as Workspace)?.ws;
+                if (ws === undefined || ws === null)
                     return;
-                if (Niri.activeWsId !== ws)
+                if (root.activeWsId !== ws)
                     Niri.switchToWorkspace(ws);
-                    // Hypr.dispatch(Hypr.usingLua ? `hl.dsp.focus({ workspace = "${ws}" })` : `workspace ${ws}`);
-                // else
-                //     Hypr.dispatch(Hypr.usingLua ? 'hl.dsp.workspace.toggle_special("special")' : "togglespecialworkspace special");
             }
         }
 
@@ -123,22 +181,31 @@ StyledClippingRect {
     Loader {
         id: specialWs
 
-        asynchronous: true
-
         anchors.fill: parent
-        anchors.margins: Tokens.padding.extraSmall
 
+        asynchronous: true
         active: opacity > 0
-
-        scale: root.onSpecial ? 1 : 0.5
         opacity: root.onSpecial ? 1 : 0
 
-        sourceComponent: SpecialWorkspaces {
-            screen: root.screen
-        }
+        sourceComponent: Item {
+            StyledRect {
+                anchors.fill: parent
+                radius: Tokens.rounding.full
+                color: Qt.alpha(Colours.palette.m3scrim, Colours.light ? 0 : 0.2)
+            }
 
-        Behavior on scale {
-            Anim {}
+            SpecialWorkspaces {
+                anchors.fill: parent
+                anchors.margins: Tokens.padding.extraSmall
+                monitor: root.monitor
+
+                scale: 0.5
+                Component.onCompleted: scale = Qt.binding(() => root.onSpecial ? 1 : 0.5)
+
+                Behavior on scale {
+                    Anim {}
+                }
+            }
         }
 
         Behavior on opacity {
@@ -152,5 +219,9 @@ StyledClippingRect {
         Anim {
             type: Anim.StandardSmall
         }
+    }
+
+    Behavior on implicitHeight {
+        Anim {}
     }
 }

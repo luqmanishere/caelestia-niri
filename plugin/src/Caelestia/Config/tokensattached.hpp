@@ -5,7 +5,6 @@
 #include <qquickattachedpropertypropagator.h>
 
 #include "anim.hpp"
-#include "font.hpp"
 #include "rootnodes.hpp"
 
 namespace caelestia::config {
@@ -24,7 +23,7 @@ class Tokens : public QQuickAttachedPropertyPropagator, public QQmlParserStatus 
     Q_PROPERTY(const caelestia::config::AppearanceTransparency* transparency READ transparency NOTIFY sourceChanged)
     Q_PROPERTY(const caelestia::config::SizeTokens* sizes READ sizes NOTIFY sourceChanged)
     Q_PROPERTY(const caelestia::config::FontTokens* font READ font NOTIFY sourceChanged)
-    Q_PROPERTY(const caelestia::config::AnimTokens* anim READ anim NOTIFY sourceChanged)
+    Q_PROPERTY(const caelestia::config::AnimTokens* anim READ anim CONSTANT)
 
 public:
     explicit Tokens(QObject* parent = nullptr);
@@ -35,15 +34,18 @@ public:
     [[nodiscard]] const AppearanceRounding* rounding() const;
     [[nodiscard]] const AppearanceSpacing* spacing() const;
     [[nodiscard]] const AppearancePadding* padding() const;
-    [[nodiscard]] const AppearanceTransparency* transparency() const;
+    [[nodiscard]] static const AppearanceTransparency* transparency();
 
     [[nodiscard]] const SizeTokens* sizes() const;
     [[nodiscard]] const FontTokens* font() const;
-    [[nodiscard]] const AnimTokens* anim() const;
+    [[nodiscard]] static const AnimTokens* anim();
 
     [[nodiscard]] Q_INVOKABLE static TokensRoot* forScreen(const QString& screen);
 
     static Tokens* qmlAttachedProperties(QObject* object);
+
+    void classBegin() override;
+    void componentComplete() override;
 
 signals:
     void sourceChanged();
@@ -53,19 +55,12 @@ protected:
         QQuickAttachedPropertyPropagator* newParent, QQuickAttachedPropertyPropagator* oldParent) override;
 
 private:
-    void classBegin() override;
-    void componentComplete() override;
-
     void propagateScreen();
-    void bindAnim();
-    void bindFont();
 
     bool m_complete = false;
     QString m_screen;
     ConfigRoot* m_config = nullptr;
     TokensRoot* m_tokens = nullptr;
-    FontTokens* m_font = nullptr;
-    AnimTokens* m_anim = nullptr;
 };
 
 } // namespace caelestia::config

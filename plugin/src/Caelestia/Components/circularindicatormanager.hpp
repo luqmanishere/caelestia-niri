@@ -24,9 +24,9 @@ class CircularIndicatorManager : public QObject {
 public:
     explicit CircularIndicatorManager(QObject* parent = nullptr);
 
-    enum IndeterminateAnimationType {
+    enum class IndeterminateAnimationType : quint8 {
         Advance = 0,
-        Retreat
+        Retreat,
     };
     Q_ENUM(IndeterminateAnimationType)
 

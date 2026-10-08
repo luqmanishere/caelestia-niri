@@ -3,15 +3,15 @@
 #include <qjsengine.h>
 #include <qqmlengine.h>
 
-#include "common.hpp"
 #include "settings/layerregistry.hpp"
 #include "settings/rootnode.hpp"
-
 #include "appearanceconfig.hpp"
 #include "backgroundconfig.hpp"
 #include "barconfig.hpp"
 #include "borderconfig.hpp"
+#include "common.hpp"
 #include "dashboardconfig.hpp"
+#include "font.hpp"
 #include "generalconfig.hpp"
 #include "launcherconfig.hpp"
 #include "lockconfig.hpp"
@@ -52,9 +52,13 @@ class ConfigRoot : public settings::RootNode {
 public:
     explicit ConfigRoot(const QString& path, ConfigRoot* fallback = nullptr, QObject* parent = nullptr);
 
+    [[nodiscard]] const FontTokens* fontTokens() const;
+
 private:
-    // Binds the computed appearance values to the global token base values
+    // Binds computed values to the global token base values
     void bindTokens();
+
+    FontTokens* const m_fontTokens;
 };
 
 class TokensRoot : public settings::RootNode {
@@ -70,9 +74,9 @@ public:
 
 namespace detail {
 
-enum class ConfigKind {
+enum class ConfigKind : quint8 {
     Shell,
-    Tokens
+    Tokens,
 };
 
 void loaded(ConfigKind kind, settings::RootNode* layer, const QString& screen);

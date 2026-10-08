@@ -24,7 +24,7 @@ ColumnLayout {
             return;
 
         for (let i = 0; i < repeater.count; i++) {
-            const tray = (repeater.itemAt(i) as EntryWrapper).item as Tray;
+            const tray = (repeater.itemAt(i) as EntryWrapper)?.item as Tray;
             if (tray)
                 tray.expanded = false;
         }
@@ -79,9 +79,12 @@ ColumnLayout {
         const ch = childAt(width / 2, y) as EntryWrapper;
         if (ch?.entryId === "workspaces" && Config.bar.scrollActions.workspaces) {
             // Workspace scroll
-            const perMonitorWorkspaces = GlobalConfig.bar.workspaces.perMonitorWorkspaces;
-            const mon = GlobalConfig.bar.workspaces.perMonitorWorkspaces ? Niri.monitorFor(screen) : null;
-            if (angleDelta.y < 0 || (perMonitorWorkspaces ? mon?.activeWorkspace?.id : Niri.activeWsId) > 1)
+            const perMonitorWorkspaces = Config.bar.workspaces.perMonitor;
+            const mon = perMonitorWorkspaces ? Niri.monitorFor(screen) : null;
+            const activeWorkspace = perMonitorWorkspaces
+                ? Niri.workspaces.find(w => w.id === mon?.activeWorkspace?.id)
+                : Niri.focusedWorkspace;
+            if (angleDelta.y < 0 || activeWorkspace?.idx > 0)
                 Niri.switchToWorkspaceUpDown(angleDelta.y > 0 ? "down" : "up");
         } else if (y < screen.height / 2 && Config.bar.scrollActions.volume) {
             // Volume scroll on top half

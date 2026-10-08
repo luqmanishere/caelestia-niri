@@ -92,7 +92,7 @@ Scope {
     }
 
     Variants {
-        model: GlobalConfig.general.idle.timeouts
+        model: GlobalConfig.general.idle.timeouts.values
 
         IdleMonitor {
             required property var modelData

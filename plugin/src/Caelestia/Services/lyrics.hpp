@@ -1,12 +1,12 @@
 #pragma once
 
-#include "lyriccandidate.hpp"
-
 #include <qhash.h>
 #include <qjsonobject.h>
 #include <qnetworkaccessmanager.h>
 #include <qnetworkreply.h>
 #include <qtimer.h>
+
+#include "lyriccandidate.hpp"
 
 namespace caelestia::services {
 
@@ -29,7 +29,7 @@ class Lyrics : public QObject {
     Q_PROPERTY(caelestia::services::LyricCandidate selectedCandidate READ selectedCandidate WRITE setSelectedCandidate
             NOTIFY selectedCandidateChanged)
     Q_PROPERTY(bool loading READ loading NOTIFY loadingChanged)
-    Q_PROPERTY(bool hasLyrics READ hasLyrics NOTIFY lyricsChanged)
+    Q_PROPERTY(bool hasLyrics READ hasLyrics NOTIFY hasLyricsChanged)
     Q_PROPERTY(qreal offset READ offset WRITE setOffset NOTIFY offsetChanged)
     Q_PROPERTY(QString trackArtist READ trackArtist NOTIFY trackChanged)
     Q_PROPERTY(QString trackTitle READ trackTitle NOTIFY trackChanged)
@@ -85,7 +85,7 @@ private:
     void tryLocal(int reqId);
     void tryLrclib(int reqId);
     void tryNetEase(int reqId);
-    void chainNext(LyricsBackend just_failed, int reqId);
+    void chainNext(LyricsBackend justFailed, int reqId);
 
     void searchLrclibCandidates(int reqId);
     void searchNetEaseCandidates(int reqId);
@@ -102,8 +102,8 @@ private:
     void loadLyricsMap();
     void persistTrackPrefs();
 
-    [[nodiscard]] QString lyricsDir() const;
-    [[nodiscard]] QString lyricsMapPath() const;
+    [[nodiscard]] static QString lyricsDir();
+    [[nodiscard]] static QString lyricsMapPath();
     [[nodiscard]] QString trackKey() const;
     [[nodiscard]] static QString backendKey(LyricsBackend value);
     [[nodiscard]] static LyricsBackend backendFromKey(const QString& key);

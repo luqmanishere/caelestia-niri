@@ -6,13 +6,16 @@ namespace caelestia::config {
 
 namespace {
 
-settings::ObjectNode* style(settings::ObjectNode* cfg, const QString& key) {
+settings::ObjectNode* style(const settings::ObjectNode* cfg, const QString& key) {
     return cfg->value(key).value<settings::ObjectNode*>();
 }
 
 } // namespace
 
 // FontStyleBase
+
+FontStyleBase::FontStyleBase(QObject* parent)
+    : QObject(parent) {}
 
 QFont FontStyleBase::large() const {
     return m_large;
@@ -267,7 +270,7 @@ void FontTokens::rebuildClock() {
     QFont f;
     if (m_font)
         f.setFamily(m_font->clock());
-    m_clock = f;
+    m_clock = std::move(f);
     emit clockChanged();
 }
 
