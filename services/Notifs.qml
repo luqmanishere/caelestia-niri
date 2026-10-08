@@ -18,6 +18,15 @@ Singleton {
     property list<NotifData> list: []
     readonly property list<NotifData> notClosed: list.filter(n => !n.closed)
     readonly property list<NotifData> popups: list.filter(n => n.popup)
+    readonly property var byApp: {
+        const groups = new Map();
+        for (const notif of list) {
+            if (!groups.has(notif.appName))
+                groups.set(notif.appName, []);
+            groups.get(notif.appName).push(notif);
+        }
+        return groups;
+    }
     property alias dnd: props.dnd
 
     property bool loaded

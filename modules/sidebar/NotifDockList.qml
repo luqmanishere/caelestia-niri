@@ -36,14 +36,7 @@ LazyListView {
     removeDuration: Tokens.anim.durations.normal
 
     model: ScriptModel {
-        values: {
-            const map = new Map();
-            for (const n of Notifs.notClosed)
-                map.set(n.appName, null);
-            for (const n of Notifs.list)
-                map.set(n.appName, null);
-            return [...map.keys()];
-        }
+        values: [...Notifs.byApp.keys()]
     }
 
     delegate: Component {
