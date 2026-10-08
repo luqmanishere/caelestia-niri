@@ -53,14 +53,12 @@ QtObject {
     property bool hasActionIcons
     property list<var> actions
 
-    readonly property bool hasFullscreen: Niri.toplevels.some(t => t.lastIpcObject.fullscreen > 1) ?? false
-
     readonly property Timer timer: Timer {
-        running: true
-        interval: notif.expireTimeout > 0 ? notif.expireTimeout : notif.hasFullscreen ? GlobalConfig.notifs.fullscreenExpireTimeout : GlobalConfig.notifs.defaultExpireTimeout
+        running: notif.popup
+        interval: notif.expireTimeout > 0 ? notif.expireTimeout : Notifs.fullscreenActive ? GlobalConfig.notifs.fullscreenExpireTimeout : GlobalConfig.notifs.defaultExpireTimeout
         onTriggered: {
             // Always expire if the active workspace has a fullscreen window
-            if (GlobalConfig.notifs.expire || notif.hasFullscreen)
+            if (GlobalConfig.notifs.expire || Notifs.fullscreenActive)
                 notif.popup = false;
         }
     }

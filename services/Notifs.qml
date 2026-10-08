@@ -30,15 +30,16 @@ Singleton {
     property alias dnd: props.dnd
 
     property bool loaded
+    readonly property bool fullscreenActive: Niri.toplevels.some(t => t.lastIpcObject.fullscreen > 1) ?? false
 
     function hasFullscreen(): bool {
-        return Niri.toplevels.some(t => t.lastIpcObject.fullscreen > 1) ?? false;
+        return fullscreenActive;
     }
 
     function shouldShowPopup(): bool {
         if (props.dnd || ShellState.anySidebarOpen())
             return false;
-        if (GlobalConfig.notifs.fullscreen === NotifsFullscreen.Off && hasFullscreen())
+        if (GlobalConfig.notifs.fullscreen === NotifsFullscreen.Off && fullscreenActive)
             return false;
         return true;
     }
