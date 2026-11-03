@@ -12,7 +12,7 @@ Item {
 
     required property PopoutState popouts
 
-    implicitWidth: Niri.activeToplevel ? child.implicitWidth : -Tokens.padding.extraLargeIncreased
+    implicitWidth: Compositor.activeWindow ? child.implicitWidth : -Tokens.padding.extraLargeIncreased
     implicitHeight: child.implicitHeight
 
     Column {
@@ -34,7 +34,7 @@ Item {
                 asynchronous: true
                 Layout.alignment: Qt.AlignVCenter
                 implicitSize: details.implicitHeight
-                source: Icons.getAppIcon(Niri.activeToplevel?.lastIpcObject.class ?? "", "image-missing")
+                source: Icons.getAppIcon(Compositor.activeWindow?.appId ?? "", "image-missing")
             }
 
             ColumnLayout {
@@ -45,14 +45,14 @@ Item {
 
                 StyledText {
                     Layout.fillWidth: true
-                    text: Niri.activeToplevel?.title ?? ""
+                    text: Compositor.activeWindow?.title ?? ""
                     font: Tokens.font.body.medium
                     elide: Text.ElideRight
                 }
 
                 StyledText {
                     Layout.fillWidth: true
-                    text: Niri.activeToplevel?.lastIpcObject.class ?? ""
+                    text: Compositor.activeWindow?.appId ?? ""
                     color: Colours.palette.m3onSurfaceVariant
                     elide: Text.ElideRight
                 }
@@ -85,11 +85,14 @@ Item {
         ClippingWrapperRectangle {
             color: "transparent"
             radius: Tokens.rounding.medium
+            visible: preview.hasContent
 
             ScreencopyView {
                 id: preview
 
-                captureSource: Niri.activeToplevel?.wayland ?? null // qmllint disable unresolved-type
+                // Toplevel capture needs hyprland-toplevel-export-v1, which
+                // Halley does not advertise; no live window preview source.
+                captureSource: null // qmllint disable unresolved-type
                 live: visible
 
                 constraintSize.width: Tokens.sizes.bar.windowPreviewSize

@@ -35,8 +35,9 @@ StyledRect {
 
     // Entries that can shrink to nothing, spacing included
     function collapsed(entry: var): bool {
+        // No caps/num-lock source on Halley (Compositor reports false there).
         if (entry.id === "lockStatus")
-            return !Niri.capsLock && !Niri.numLock;
+            return !Compositor.capsLock && !Compositor.numLock;
         return false;
     }
 
@@ -110,7 +111,8 @@ StyledRect {
                     delegate: EntryWrapper {
                         StyledText {
                             animate: true
-                            text: Niri.kbLayout
+                            // No keyboard-layout source on Halley (Compositor reports "??" there).
+                            text: Compositor.kbLayout
                             color: root.colour
                             font: Tokens.font.mono.medium
                         }

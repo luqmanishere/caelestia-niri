@@ -7,11 +7,12 @@ import qs.services
 ColumnLayout {
     spacing: Tokens.spacing.small
 
+    // No caps/num-lock source on Halley (Compositor reports false there).
     StyledText {
-        text: Niri.capsLock ? Tr.tr("Caps lock enabled") : Tr.tr("Caps lock disabled")
+        text: Compositor.capsLock ? Tr.tr("Caps lock enabled") : Tr.tr("Caps lock disabled")
     }
 
     StyledText {
-        text: Niri.numLock ? Tr.tr("Num lock enabled") : Tr.tr("Num lock disabled")
+        text: Compositor.numLock ? Tr.tr("Num lock enabled") : Tr.tr("Num lock disabled")
     }
 }

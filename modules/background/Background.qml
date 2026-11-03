@@ -28,6 +28,12 @@ Variants {
         anchors.left: true
         anchors.right: true
 
+        // Nothing in here takes input (wallpaper, visualiser, desktop clock
+        // are all passive). Leave the mask empty so presses fall through to
+        // the compositor — Halley's Field pan/zoom needs empty-field presses
+        // and a full input region here would swallow them.
+        mask: Region {}
+
         ShellState.ComponentRef {
             screen: win.screen
             slot: "background"

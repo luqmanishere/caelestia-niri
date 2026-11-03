@@ -140,8 +140,15 @@ Singleton {
     onAllWorkspacesChanged: updateWorkspaceHasWindows() // Update if workspaces themselves change
     onWindowsChanged: updateWorkspaceHasWindows() // Explicitly update when the windows list changes
 
-    // Feature availability
+    // Feature availability. niriAvailable means the IPC actually answers,
+    // not just that the binary exists: `which niri` alone is true on machines
+    // where no Niri compositor runs (e.g. Halley sessions with niri installed).
+    // Niri sets NIRI_SOCKET for clients in its sessions, so without it there is
+    // nothing to probe and the backend stays fully dormant (no processes).
+    readonly property string niriSocketPath: Quickshell.env("NIRI_SOCKET") ?? ""
     property bool niriAvailable: false
+    property bool niriBinaryFound: false
+    property int streamFailCount: 0
 
     Component.onCompleted: {
         console.log("NiriService: Component.onCompleted - initializing service");
@@ -163,10 +170,11 @@ Singleton {
         id: niriCheck
         command: ["which", "niri"]
         onExited: exitCode => {
-            root.niriAvailable = exitCode === 0;
-            if (root.niriAvailable) {
-                console.log("NiriService: niri found, starting event stream and loading initial data");
-                eventStreamProcess.running = true;
+            root.niriBinaryFound = exitCode === 0;
+            if (root.niriBinaryFound) {
+                console.log("NiriService: niri binary found, probing IPC");
+                // The workspace query doubles as the IPC probe: only a live
+                // compositor answers it with exit code 0.
                 root.loadInitialWorkspaceData();
             } else {
                 console.log("NiriService: niri not found, workspace features disabled");
@@ -174,11 +182,42 @@ Singleton {
         }
     }
 
+    // Slow re-probe so a Niri compositor started after the shell is picked up
+    // (and a dead one is noticed). Only inside Niri sessions; elsewhere the
+    // backend never arms in the first place.
+    Timer {
+        id: reprobeTimer
+
+        interval: 15000
+        repeat: true
+        running: root.niriSocketPath !== "" && root.niriBinaryFound && !root.niriAvailable
+        onTriggered: {
+            if (!eventStreamProcess.running)
+                root.loadInitialWorkspaceData();
+        }
+    }
+
+    // Backoff for event-stream crashes: a few fast retries for transient drops,
+    // then give up to the slow re-probe instead of hot-looping a dead IPC.
+    Timer {
+        id: streamRetryTimer
+
+        interval: 2000
+        onTriggered: {
+            if (root.niriAvailable)
+                eventStreamProcess.running = true;
+        }
+    }
+
     function checkNiriAvailability() {
+        if (root.niriSocketPath === "") {
+            console.log("NiriService: no NIRI_SOCKET, Niri backend dormant");
+            return;
+        }
         niriCheck.running = true;
     }
 
-    // Load initial workspace data
+    // Load initial workspace data (also the IPC liveness probe)
     Process {
         id: initialDataQuery
         command: ["niri", "msg", "-j", "workspaces"]
@@ -197,6 +236,21 @@ Singleton {
                         console.warn("NiriService: Failed to parse initial workspace data:", e);
                     }
                 }
+            }
+        }
+        onExited: exitCode => {
+            if (exitCode === 0) {
+                root.streamFailCount = 0;
+                if (!root.niriAvailable)
+                    console.log("NiriService: niri IPC alive, starting event stream and loading initial data");
+                root.niriAvailable = true;
+                eventStreamProcess.running = true;
+                initialWindowsQuery.running = true;
+                initialFocusedWindowQuery.running = true;
+                initialOutputsQuery.running = true;
+            } else if (root.niriAvailable) {
+                console.warn("NiriService: niri IPC query failed, workspace features disabled");
+                root.niriAvailable = false;
             }
         }
     }
@@ -268,10 +322,9 @@ Singleton {
 
     function loadInitialWorkspaceData() {
         console.log("NiriService: Loading initial workspace data...");
+        // Just the probe: the rest (windows, focused window, outputs, event
+        // stream) chains off its successful exit above.
         initialDataQuery.running = true;
-        initialWindowsQuery.running = true;
-        initialFocusedWindowQuery.running = true;
-        initialOutputsQuery.running = true; // Add this line
     }
 
     // Event stream for real-time updates
@@ -291,8 +344,14 @@ Singleton {
         }
         onExited: exitCode => {
             if (exitCode !== 0 && root.niriAvailable) {
-                console.warn("NiriService: Event stream exited with code", exitCode, "restarting immediately");
-                eventStreamProcess.running = true;
+                root.streamFailCount++;
+                if (root.streamFailCount <= 3) {
+                    console.warn("NiriService: Event stream exited with code", exitCode, "retrying with backoff");
+                    streamRetryTimer.restart();
+                } else {
+                    console.warn("NiriService: Event stream keeps failing, workspace features disabled until re-probe");
+                    root.niriAvailable = false;
+                }
             }
         }
     }

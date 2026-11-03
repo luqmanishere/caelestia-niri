@@ -13,7 +13,7 @@ Scope {
         Players;
         Brightness;
         Weather.reload();
-        Niri;
+        Compositor;
 
         if (GlobalConfig.utilities.vpn.enabled)
             VPN;

@@ -15,33 +15,37 @@ StyledClippingRect {
     required property ShellScreen screen
     required property bool fullscreen
 
-    // Niri has no special workspaces.
+    // Halley has no special workspaces; clusters are the workspaces and
+    // Field mode (no active cluster) is a normal state, not an error.
     readonly property bool onSpecial: false
-    readonly property var monitor: Niri.monitorFor(screen)
+    readonly property var monitor: Compositor.monitorFor(screen)
+    readonly property var screenSets: {
+        if (!Config.bar.workspaces.perMonitor)
+            return Compositor.sortedWindowsets(null);
+        return Compositor.sortedWindowsets(screen);
+    }
     readonly property var activeWorkspace: {
         if (!Config.bar.workspaces.perMonitor)
-            return Niri.focusedWorkspace;
-        return Niri.workspaces.find(w => w.output === monitor?.name && w.is_active)
-            ?? Niri.workspaces.find(w => w.output === monitor?.name)
-            ?? Niri.focusedWorkspace;
+            return Compositor.focusedWorkspace;
+        return Compositor.workspaceForScreen(screen) ?? Compositor.focusedWorkspace;
     }
-    readonly property var activeWsId: activeWorkspace?.id ?? null
+    readonly property string activeWsId: activeWorkspace?.id ?? ""
     readonly property int shown: Math.max(1, Config.bar.workspaces.shown)
 
     readonly property var wsIds: {
-        const allMonitors = !Config.bar.workspaces.perMonitor;
-        const candidates = Niri.workspaces.filter(w => allMonitors || w.output === root.monitor?.name);
-        const shownWorkspaces = Config.bar.workspaces.showUnoccupied
-            ? candidates
-            : candidates.filter(w => Niri.getWindowsByWorkspaceId(w.id).length > 0 || w.id === activeWsId);
-        const currentIdx = shownWorkspaces.findIndex(w => w.id === activeWsId);
-        if (currentIdx < 0)
+        // Per-cluster occupancy is not exposed over wlr-foreign-toplevel
+        // (Toplevel carries owning output, not cluster membership), so
+        // showUnoccupied cannot filter and shows everything.
+        const sets = screenSets;
+        if (sets.length === 0)
             return [];
-
-        const end = CUtils.clamp(currentIdx + 1, Math.min(shown, shownWorkspaces.length), shownWorkspaces.length);
+        const currentIdx = sets.findIndex(w => w.id === activeWsId);
+        // Field mode has no active cluster; anchor the window at the start
+        // instead of blanking the bar.
+        const anchor = currentIdx < 0 ? 0 : currentIdx;
+        const end = CUtils.clamp(anchor + 1, Math.min(shown, sets.length), sets.length);
         const start = Math.max(0, end - shown);
-
-        return shownWorkspaces.slice(start, end).map(w => w.id);
+        return sets.slice(start, end).map(w => w.id);
     }
 
     readonly property var workspaces: {
@@ -163,7 +167,7 @@ StyledClippingRect {
                 if (ws === undefined || ws === null)
                     return;
                 if (root.activeWsId !== ws)
-                    Niri.switchToWorkspace(ws);
+                    Compositor.switchToWorkspace(ws);
             }
         }
 

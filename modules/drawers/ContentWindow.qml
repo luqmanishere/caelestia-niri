@@ -20,8 +20,8 @@ StyledWindow {
 
     readonly property ScreenState screenState: ShellState.forScreen(screen)
 
-    readonly property var monitor: Niri.monitorFor(screen)
-    readonly property bool hasFullscreen: Niri.toplevels.some(t => t.lastIpcObject.fullscreen > 1) ?? false
+    readonly property var monitor: Compositor.monitorFor(screen)
+    readonly property bool hasFullscreen: Compositor.hasFullscreen
 
     property real fsTransitionProg: hasFullscreen ? 1 : 0
     readonly property real sdfBorderOffset: 2 * fsTransitionProg // SDFs joins are not exact, so offset by 2px to ensure nothing shows
@@ -36,7 +36,7 @@ StyledWindow {
         if (panels.popouts.isDetached)
             return 0;
 
-        if (Niri.toplevels.filter(w => w.workspace?.id === monitor?.activeWorkspace?.id).length > 0)
+        if (Compositor.toplevelsForScreen(screen).length > 0)
             return 0;
 
         const thresholds = [];

@@ -15,7 +15,7 @@ Item {
     property color colour: Colours.palette.m3primary
 
     readonly property string windowTitle: {
-        const title = Niri.activeToplevel?.title;
+        const title = Compositor.activeWindow?.title;
         if (!title)
             return Tr.trCtx("Desktop", "shown when no window is focused");
         if (Config.bar.activeWindow.compact) {
@@ -71,7 +71,7 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
 
         animate: true
-        text: Icons.getAppCategoryIcon(Niri.activeToplevel?.lastIpcObject.class, "desktop_windows")
+        text: Icons.getAppCategoryIcon(Compositor.activeWindow?.appId, "desktop_windows")
         color: root.colour
     }
 

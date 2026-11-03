@@ -6,6 +6,7 @@ import Quickshell
 import Quickshell.Io
 import Caelestia.Config
 import qs.components.misc
+import qs.services
 
 Singleton {
     id: root
@@ -26,7 +27,7 @@ Singleton {
 
     function getMonitor(query: string): var {
         if (query === "active") {
-            return monitors.find(m => Niri.monitorFor(m.modelData)?.focused); // qmllint disable missing-property
+            return monitors.find(m => m.modelData === Compositor.focusedScreen); // qmllint disable missing-property
         }
 
         if (query.startsWith("model:")) {
@@ -40,8 +41,8 @@ Singleton {
         }
 
         if (query.startsWith("id:")) {
-            const id = parseInt(query.slice(3), 10);
-            return monitors.find(m => Niri.monitorFor(m.modelData)?.id === id); // qmllint disable missing-property
+            // Halley exposes no numeric output id; fall back to name lookup.
+            return monitors.find(m => m.modelData.name === query.slice(3)); // qmllint disable missing-property
         }
 
         return monitors.find(m => m.modelData.name === query); // qmllint disable missing-property

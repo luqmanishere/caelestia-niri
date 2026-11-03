@@ -9,9 +9,14 @@ ColumnLayout {
     required property color colour
     required property int parentSpacing
 
-    property real gap: Niri.capsLock && Niri.numLock ? parentSpacing : 0
-    property real capsHeight: Niri.capsLock ? capslockIcon.implicitHeight : 0
-    property real numHeight: Niri.numLock ? numlockIcon.implicitHeight : 0
+    // Caps/num-lock state comes from the compositor backend (Niri only;
+    // Compositor reports false on Halley, hiding these).
+    readonly property bool capsLock: Compositor.capsLock
+    readonly property bool numLock: Compositor.numLock
+
+    property real gap: capsLock && numLock ? parentSpacing : 0
+    property real capsHeight: capsLock ? capslockIcon.implicitHeight : 0
+    property real numHeight: numLock ? numlockIcon.implicitHeight : 0
 
     spacing: Math.round(gap)
 
@@ -42,8 +47,8 @@ ColumnLayout {
 
             anchors.centerIn: parent
 
-            scale: Niri.capsLock ? 1 : 0.5
-            opacity: Niri.capsLock ? 1 : 0
+            scale: root.capsLock ? 1 : 0.5
+            opacity: root.capsLock ? 1 : 0
 
             text: "keyboard_capslock_badge"
             color: root.colour
@@ -71,8 +76,8 @@ ColumnLayout {
 
             anchors.centerIn: parent
 
-            scale: Niri.numLock ? 1 : 0.5
-            opacity: Niri.numLock ? 1 : 0
+            scale: root.numLock ? 1 : 0.5
+            opacity: root.numLock ? 1 : 0
 
             text: "looks_one"
             color: root.colour

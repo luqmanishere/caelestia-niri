@@ -30,7 +30,7 @@ Singleton {
     property alias dnd: props.dnd
 
     property bool loaded
-    readonly property bool fullscreenActive: Niri.toplevels.some(t => t.lastIpcObject.fullscreen > 1) ?? false
+    readonly property bool fullscreenActive: Compositor.hasFullscreen
 
     function hasFullscreen(): bool {
         return fullscreenActive;

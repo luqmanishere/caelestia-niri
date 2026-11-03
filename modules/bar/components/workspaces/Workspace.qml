@@ -13,10 +13,10 @@ import qs.utils
 Item {
     id: root
 
-    required property int modelData
+    required property var modelData
     required property int index
-    required property int activeWsId
-    required property int ws
+    required property string activeWsId
+    required property string ws
     required property var monitor
 
     required property int displayType
@@ -26,7 +26,9 @@ Item {
     property string occupiedLabel
     property string label
 
-    readonly property var toplevels: Niri.getWindowsByWorkspaceId(ws)
+    // wlr-foreign-toplevel exposes no cluster membership, so this is the
+    // output's toplevels (see Compositor.getWindowsByWorkspaceId).
+    readonly property var toplevels: Compositor.getWindowsByWorkspaceId(ws)
     readonly property bool isOccupied: toplevels.length > 0
     readonly property bool hasWindows: isOccupied && showWindows && Config.bar.workspaces.maxWindowIcons > 0
     readonly property bool focused: activeWsId === ws
@@ -36,8 +38,8 @@ Item {
     readonly property bool onOtherMonitor: {
         if (Config.bar.workspaces.perMonitor)
             return false;
-        const output = Niri.workspaces.find(w => w.id === ws)?.output;
-        return !!(output && output !== monitor?.name);
+        const outs = Compositor.findWorkspace(root.ws)?.outputs ?? [];
+        return outs.length > 0 && !outs.includes(monitor?.screen?.name);
     }
     readonly property color fgColour: {
         if (onOtherMonitor)
@@ -127,8 +129,8 @@ Item {
                 if (label)
                     return label;
 
-                const ws = Niri.workspaces.find(w => w.id === root.ws);
-                const wsName = !ws || !ws.name || ws.name == root.ws ? root.ws : ws.name[0];
+                const ws = Compositor.findWorkspace(root.ws);
+                const wsName = !ws || !ws.name ? root.ws : ws.name[0];
 
                 const capitalisation = Config.bar.workspaces.capitalisation;
                 if (capitalisation === BarWorkspaceCapitalisation.Upper)
@@ -227,7 +229,7 @@ Item {
 
                     grade: 0
                     horizontalAlignment: Text.AlignHCenter
-                    text: Icons.getAppCategoryIcon(modelData.lastIpcObject.class, "terminal")
+                    text: Icons.getAppCategoryIcon(modelData.appId, "terminal")
                     color: root.onOtherMonitor ? root.offMonitorColour : Colours.palette.m3onSurfaceVariant
 
                     opacity: LazyListView.adding || LazyListView.removing ? 0 : 1
@@ -249,7 +251,7 @@ Item {
     component WsIconCacher: QtObject {
         id: cacher
 
-        readonly property var wsObj: Niri.workspaces.find(w => w.id === root.ws) ?? null
+        readonly property var wsObj: Compositor.findWorkspace(root.ws)
         readonly property string name: wsObj?.name ?? ""
         readonly property string icon: Icons.matchIconRuleList(name, root.iconRules)
     }

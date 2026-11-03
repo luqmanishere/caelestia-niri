@@ -31,8 +31,12 @@ Scope {
             lock.lock.locked = true;
         else if (action === "unlock")
             lock.lock.locked = false;
-        else if (typeof action === "string")
-            Niri.dispatch(action === "dpms off" ? "power-off-monitors" : action === "dpms on" ? "power-on-monitors" : action);
+        else if (action === "dpms off")
+            Compositor.setDpms(false);
+        else if (action === "dpms on")
+            Compositor.setDpms(true);
+        else if (typeof action === "string" && Compositor.dispatch(action))
+            return;
         else if (!SessionManager.exec(action))
             Quickshell.execDetached(action);
     }
@@ -71,7 +75,7 @@ Scope {
         onIsIdleChanged: {
             if (!root.lock.lock.locked)
                 return;
-            Niri.dispatch(isIdle ? "power-off-monitors" : "power-on-monitors");
+            Compositor.setDpms(!isIdle);
         }
     }
 
@@ -82,9 +86,9 @@ Scope {
                 // lock action), power off immediately - there's no isIdle
                 // transition to catch it.
                 if (lockScreenIdleMonitor.isIdle)
-                    Niri.dispatch("power-off-monitors");
+                    Compositor.setDpms(false);
             } else {
-                Niri.dispatch("power-on-monitors");
+                Compositor.setDpms(true);
             }
         }
 

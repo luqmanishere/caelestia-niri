@@ -20,10 +20,10 @@ Item {
             return false;
         if (!Config.background.visualiser.autoHide)
             return true;
-        // All windows on the active workspace of this screen must be floating
-        const wsId = Niri.monitorFor(screen)?.activeWorkspace?.id;
-        const wins = wsId ? Niri.toplevels.filter(w => w.workspace?.id === wsId) : [];
-        return wins.every(w => w.is_floating);
+        // wlr-foreign-toplevel exposes no floating state and Halley windows
+        // overlap freely, so autoHide degrades to "nothing covering this
+        // screen's wallpaper".
+        return Compositor.toplevelsForScreen(screen).length === 0;
     }
     property real offset: shouldBeActive ? 0 : screen.height * 0.2
 
